@@ -106,6 +106,17 @@ def download_video(video_url, video_title):
 
 # ------------------------- ZENODO FUNCTIONS -------------------------
 def build_metadata(video):
+    # Extract hashtags from the YouTube description (e.g. #Tantra)
+    hashtags = [
+        word[1:] for word in video["description"].split()
+        if word.startswith("#") and len(word) > 1
+    ]
+
+    # Combine with existing YouTube tags and fixed tags
+    all_tags = set(video.get("tags", []))  # Tags from YouTube metadata
+    all_tags.update(hashtags)
+    all_tags.update(["sarvamnaya", "vimarsha-foundation", "sarvamnaya-oral-tradition-archive"])
+
     metadata = {
         "title": video["title"],
         "upload_type": "presentation",
@@ -113,7 +124,7 @@ def build_metadata(video):
         "creators": [{"name": CREATOR_NAME}],
         "access_right": "open",
         "license": "cc-by-4.0",
-        "keywords": video.get("tags", []),
+        "keywords": sorted(list(all_tags)),
         "publication_date": video["published_at"][:10],
         "communities": [{"identifier": ZENODO_COLLECTION}],
         "related_identifiers": [
@@ -131,6 +142,7 @@ def build_metadata(video):
             raise ValueError(f"Missing required metadata field: {field}")
 
     return {"metadata": metadata}
+
 
 def create_deposition(metadata):
     headers = {
