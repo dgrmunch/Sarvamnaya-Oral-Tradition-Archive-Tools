@@ -8,6 +8,13 @@ df = pd.read_csv(csv_file)
 # Drop the 'audio_extracted' column as requested
 df = df.drop(columns=['audio_extracted'])
 
+# Format the DOI column as clickable URLs
+df['doi'] = df['doi'].apply(lambda x: f'<a href="https://doi.org/{x}" target="_blank">{x}</a>')
+
+# Format the Zenodo and YouTube links as clickable URLs
+df['zenodo_link'] = df['zenodo_link'].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
+df['youtube_link'] = df['youtube_link'].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
+
 # Convert DataFrame to JSON format
 data_json = df.to_dict(orient='records')
 
