@@ -196,10 +196,10 @@ def process_video(video):
         print("❌ Skipping due to missing details.")
         return
 
-    confirm = input(f"Upload '{video['title']}' to Zenodo? (y/n): ").strip().lower()
-    if confirm != 'y':
-        print("⏭️ Skipped.")
-        return
+    #confirm = input(f"Upload '{video['title']}' to Zenodo? (y/n): ").strip().lower()
+    #if confirm != 'y':
+    #   print("⏭️ Skipped.")
+    #   return
 
     path = download_video(details["url"], details["title"])
     if not path:
@@ -229,17 +229,32 @@ def main():
         videos = get_channel_videos(CHANNEL_ID, YOUTUBE_API_KEY)
         print(f"Found {len(videos)} videos.")
 
-        for video in videos:
-            if video["video_id"] in processed_ids:
-                print(f"✅ Already uploaded: {video['title']}")
-                continue
-            process_video(video)
-            time.sleep(WAIT_BETWEEN_UPLOADS)
+        # Filter out already processed videos
+        new_videos = [v for v in videos if v["video_id"] not in processed_ids]
 
-        print("\n🎉 All done!")
+        for i in range(0, len(new_videos), 10):
+            batch = new_videos[i:i + 10]
+            print("\n🔢 Upcoming batch:")
+            for idx, v in enumerate(batch, start=1):
+                print(f"  [{idx}] {v['title']}")
+
+            choice = input("\n🚀 Upload this batch of 10 videos? (y/n): ").strip().lower()
+            if choice != 'y':
+                print("⏭️ Skipping this batch.\n")
+                continue
+
+            for v in batch:
+                try:
+                    process_video(v)
+                    time.sleep(WAIT_BETWEEN_UPLOADS)
+                except Exception as e:
+                    print(f"⚠️ Error processing '{v['title']}': {e}")
+
+        print("\n🎉 All batches complete!")
     except Exception as e:
         print(f"❌ Fatal error: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
