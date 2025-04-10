@@ -11,11 +11,13 @@ ZENODO_URL = "https://zenodo.org/api/deposit/depositions"
 ZENODO_COLLECTION = "sarvamnaya-oral-tradition-archive"
 CHANNEL_ID = "UC4wAYkt8_U1TJOfXkfpjAsw"
 CREATOR_NAME = "Timalsina, Staneshwar"
+ARCHIVE_CITATION = "Vimarsha Foundation. (2025). The Sarvāmnāya Oral Tradition Archive [Data set]. Zenodo. https://doi.org/10.5281/zenodo.15188107"
+ARCHIVE_DOI = "10.5281/zenodo.15188107"
 DOWNLOAD_DIR = "downloaded_videos"
+CSV_DB_PATH = "zenodo_registry.csv"
 WAIT_BETWEEN_UPLOADS = 3
 
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-
 
 # ------------------------- CSV FUNCTIONS -------------------------
 
@@ -28,7 +30,6 @@ def initialize_csv():
 def load_processed_youtube_ids():
     if not os.path.exists(CSV_DB_PATH):
         return set()
-    
     with open(CSV_DB_PATH, mode='r', newline='', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         return set(row["youtube_id"] for row in reader)
@@ -40,7 +41,6 @@ def append_to_csv(youtube_id, zenodo_id, title, doi, youtube_link):
         writer = csv.writer(file)
         zenodo_url = f"https://zenodo.org/record/{zenodo_id}"
         writer.writerow([row_count + 1, youtube_id, zenodo_id, title, doi, zenodo_url, youtube_link])
-
 
 # ------------------------- YOUTUBE FUNCTIONS -------------------------
 def get_channel_videos(channel_id, api_key):
@@ -118,8 +118,6 @@ def download_video(video_url, video_title):
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]',
         'outtmpl': os.path.join(DOWNLOAD_DIR, f'{safe_title}.%(ext)s'),
         'quiet': False,
-        'no_warnings': False,
-        'retries': 10,
         'merge_output_format': 'mp4',
     }
 
@@ -133,25 +131,16 @@ def download_video(video_url, video_title):
 
 # ------------------------- ZENODO FUNCTIONS -------------------------
 def build_metadata(video):
-    # Extract hashtags from the YouTube description (e.g. #Tantra)
-    hashtags = [
-        word[1:] for word in video["description"].split()
-        if word.startswith("#") and len(word) > 1
-    ]
-
-    # Combine with existing YouTube tags and fixed tags
-    all_tags = set(video.get("tags", []))  # Tags from YouTube metadata
-    all_tags.update(hashtags)
-    all_tags.update(["sarvamnaya", "vimarsha-foundation", "sarvamnaya-oral-tradition-archive"])
-
     metadata = {
         "title": video["title"],
         "upload_type": "presentation",
-        "description": f"{video['description']}\n\nOriginal YouTube video: {video['url']}",
+        "description": f"{video['description']}\n\nOriginal YouTube video: {video['url']}\n\nThis presentation is part of the Sarvāmnāya Oral Tradition Archive.\n{ARCHIVE_CITATION}",
         "creators": [{"name": CREATOR_NAME}],
         "access_right": "open",
         "license": "cc-by-4.0",
-        "keywords": sorted(list(all_tags)),
+        "keywords": list(set([
+            "sarvamnaya", "vimarsha-foundation", "sarvamnaya-oral-tradition-archive"
+        ] + video.get("tags", []))),
         "publication_date": video["published_at"][:10],
         "communities": [{"identifier": ZENODO_COLLECTION}],
         "related_identifiers": [
@@ -159,17 +148,17 @@ def build_metadata(video):
                 "identifier": video["url"],
                 "relation": "isIdenticalTo",
                 "resource_type": "publication-other"
+            },
+            {
+                "identifier": f"https://doi.org/{ARCHIVE_DOI}",
+                "relation": "isPartOf",
+                "resource_type": "dataset"
             }
-        ]
+        ],
+        "series_title": "The Sarvāmnāya Oral Tradition Archive"
     }
 
-    required_fields = ["title", "upload_type", "description", "creators", "access_right"]
-    for field in required_fields:
-        if not metadata.get(field):
-            raise ValueError(f"Missing required metadata field: {field}")
-
     return {"metadata": metadata}
-
 
 def create_deposition(metadata):
     headers = {
@@ -177,59 +166,31 @@ def create_deposition(metadata):
         "Content-Type": "application/json"
     }
 
-    try:
-        response = requests.post(ZENODO_URL, json=metadata, headers=headers, timeout=30)
-        if not response.ok:
-            msg = f"Deposition creation failed: {response.status_code}"
-            try:
-                errors = response.json()
-                msg += "\n" + json.dumps(errors, indent=2)
-            except Exception:
-                msg += f"\nRaw response: {response.text}"
-            raise Exception(msg)
-        return response.json()
-    except Exception as e:
-        print(f"❌ {e}")
-        return None
-
+    response = requests.post(ZENODO_URL, json=metadata, headers=headers)
+    if not response.ok:
+        raise Exception(f"Deposition creation failed: {response.status_code}\n{response.text}")
+    return response.json()
 
 def upload_file_to_deposition(bucket_url, file_path):
-    """Upload a file to a Zenodo bucket URL"""
-    headers = {
-        "Authorization": f"Bearer {ZENODO_TOKEN}",
-    }
+    headers = {"Authorization": f"Bearer {ZENODO_TOKEN}"}
     file_name = os.path.basename(file_path)
-    
+
     with open(file_path, "rb") as file:
-        upload_response = requests.put(
-            f"{bucket_url}/{file_name}",
-            data=file,
-            headers=headers
-        )
+        upload_response = requests.put(f"{bucket_url}/{file_name}", data=file, headers=headers)
 
     if not upload_response.ok:
-        print(f"Error uploading file: {upload_response.status_code} - {upload_response.text}")
-        return None
-    
+        raise Exception(f"Upload failed: {upload_response.status_code} - {upload_response.text}")
     return upload_response.json()
-
 
 def publish_deposition(deposition_id):
     headers = {"Authorization": f"Bearer {ZENODO_TOKEN}"}
-    url = f"{ZENODO_URL}/{deposition_id}/actions/publish"
-
-    try:
-        response = requests.post(url, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Error publishing deposition: {e}")
-        return None
+    response = requests.post(f"{ZENODO_URL}/{deposition_id}/actions/publish", headers=headers)
+    response.raise_for_status()
+    return response.json()
 
 # ------------------------- MAIN PROCESS -------------------------
 def process_video(video):
     print(f"\n📦 Processing: {video['title']}")
-
     details = get_video_details(video["video_id"], YOUTUBE_API_KEY)
     if not details:
         print("❌ Skipping due to missing details.")
@@ -242,33 +203,22 @@ def process_video(video):
 
     path = download_video(details["url"], details["title"])
     if not path:
-        print("❌ Download failed.")
         return
 
-    try:
-        metadata = build_metadata(details)
-        dep = create_deposition(metadata)
-        if not dep:
-            return
-
-        print("⬆️ Uploading video...")
-        if not upload_file_to_deposition(dep["links"]["bucket"], path):
-            return
-
-        print("🚀 Publishing...")
-        pub = publish_deposition(dep["id"])
-        if pub:
-            print(f"✅ Published! DOI: {pub['metadata']['doi']}")
-            append_to_csv(
-                youtube_id=video["video_id"],
-                zenodo_id=dep["id"],
-                title=details["title"],
-                doi=pub['metadata']['doi'],
-                youtube_link=details["url"]
-            )
-
-    except Exception as e:
-        print(f"❌ Error in processing: {e}")
+    metadata = build_metadata(details)
+    dep = create_deposition(metadata)
+    print("⬆️ Uploading video...")
+    upload_file_to_deposition(dep["links"]["bucket"], path)
+    print("🚀 Publishing...")
+    pub = publish_deposition(dep["id"])
+    print(f"✅ Published! DOI: {pub['metadata']['doi']}")
+    append_to_csv(
+        youtube_id=video["video_id"],
+        zenodo_id=dep["id"],
+        title=details["title"],
+        doi=pub['metadata']['doi'],
+        youtube_link=details["url"]
+    )
 
 def main():
     try:
@@ -287,7 +237,6 @@ def main():
             time.sleep(WAIT_BETWEEN_UPLOADS)
 
         print("\n🎉 All done!")
-
     except Exception as e:
         print(f"❌ Fatal error: {e}")
         sys.exit(1)
