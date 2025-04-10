@@ -15,6 +15,32 @@ WAIT_BETWEEN_UPLOADS = 3
 
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
+
+# ------------------------- CSV FUNCTIONS -------------------------
+
+def initialize_csv():
+    if not os.path.exists(CSV_DB_PATH):
+        with open(CSV_DB_PATH, mode='w', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(["id", "youtube_id", "zenodo_id", "title", "doi", "zenodo_link", "youtube_link"])
+
+def load_processed_youtube_ids():
+    if not os.path.exists(CSV_DB_PATH):
+        return set()
+    
+    with open(CSV_DB_PATH, mode='r', newline='', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        return set(row["youtube_id"] for row in reader)
+
+def append_to_csv(youtube_id, zenodo_id, title, doi, youtube_link):
+    with open(CSV_DB_PATH, mode='a', newline='', encoding='utf-8') as file:
+        reader = csv.reader(open(CSV_DB_PATH))
+        row_count = sum(1 for _ in reader) - 1  # Exclude header
+        writer = csv.writer(file)
+        zenodo_url = f"https://zenodo.org/record/{zenodo_id}"
+        writer.writerow([row_count + 1, youtube_id, zenodo_id, title, doi, zenodo_url, youtube_link])
+
+
 # ------------------------- YOUTUBE FUNCTIONS -------------------------
 def get_channel_videos(channel_id, api_key):
     videos = []
