@@ -7,7 +7,7 @@ import yt_dlp
 
 # ------------------------- CONFIGURATION -------------------------
 ZENODO_URL = "https://zenodo.org/api/deposit/depositions"
-ZENODO_COLLECTION = "vimarsha-foundation"
+ZENODO_COLLECTION = "sarvamnaya-oral-tradition-archive"
 CHANNEL_ID = "UC4wAYkt8_U1TJOfXkfpjAsw"
 CREATOR_NAME = "Timalsina, Staneshwar"
 DOWNLOAD_DIR = "downloaded_videos"
