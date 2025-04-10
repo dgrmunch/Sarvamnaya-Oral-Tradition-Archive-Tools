@@ -258,16 +258,30 @@ def process_video(video):
         pub = publish_deposition(dep["id"])
         if pub:
             print(f"✅ Published! DOI: {pub['metadata']['doi']}")
+            append_to_csv(
+                youtube_id=video["video_id"],
+                zenodo_id=dep["id"],
+                title=details["title"],
+                doi=pub['metadata']['doi'],
+                youtube_link=details["url"]
+            )
+
     except Exception as e:
         print(f"❌ Error in processing: {e}")
 
 def main():
     try:
+        initialize_csv()
+        processed_ids = load_processed_youtube_ids()
+
         print("📺 Fetching videos...")
         videos = get_channel_videos(CHANNEL_ID, YOUTUBE_API_KEY)
         print(f"Found {len(videos)} videos.")
 
         for video in videos:
+            if video["video_id"] in processed_ids:
+                print(f"✅ Already uploaded: {video['title']}")
+                continue
             process_video(video)
             time.sleep(WAIT_BETWEEN_UPLOADS)
 
