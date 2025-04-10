@@ -4,6 +4,7 @@ import time
 import sys
 import json
 import yt_dlp
+import csv
 
 # ------------------------- CONFIGURATION -------------------------
 ZENODO_URL = "https://zenodo.org/api/deposit/depositions"
