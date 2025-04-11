@@ -232,13 +232,14 @@ def main():
         # Filter out already processed videos
         new_videos = [v for v in videos if v["video_id"] not in processed_ids]
 
-        for i in range(0, len(new_videos), 10):
-            batch = new_videos[i:i + 10]
+        batch_number = 100
+        for i in range(0, len(new_videos), batch_number):
+            batch = new_videos[i:i + batch_number]
             print("\n🔢 Upcoming batch:")
             for idx, v in enumerate(batch, start=1):
                 print(f"  [{idx}] {v['title']}")
 
-            choice = input("\n🚀 Upload this batch of 10 videos? (y/n): ").strip().lower()
+            choice = input("\n🚀 Upload this batch of videos? (y/n): ").strip().lower()
             if choice != 'y':
                 print("⏭️ Skipping this batch.\n")
                 continue
