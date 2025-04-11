@@ -1,122 +1,189 @@
-import pandas as pd
-from jinja2 import Template
+import csv
 
-# Read CSV file
-csv_file = 'zenodo_registry.csv'  # Adjust this to your actual CSV file path
-df = pd.read_csv(csv_file)
-
-# Drop the 'audio_extracted' column as requested
-df = df.drop(columns=['audio_extracted'])
-
-# Format the DOI column as clickable URLs
-df['doi'] = df['doi'].apply(lambda x: f'<a href="https://doi.org/{x}" target="_blank">{x}</a>')
-
-# Format the Zenodo and YouTube links as clickable URLs
-df['zenodo_link'] = df['zenodo_link'].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
-df['youtube_link'] = df['youtube_link'].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
-
-# Convert DataFrame to JSON format
-data_json = df.to_dict(orient='records')
-
-# HTML template with embedded DataTable (no pagination, show all rows)
 html_template = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Data Table</title>
+  <meta charset="UTF-8">
+  <title>The Sarvāmnāya Oral Tradition Archive</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+  <!-- Bootstrap and jQuery -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-
-        table {
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        th {
-            text-align: left;
-            padding: 8px;
-            background-color: #f2f2f2;
-        }
-
-        td {
-            padding: 8px;
-        }
-
-        #example_filter {
-            margin-bottom: 20px;
-        }
-    </style>
+  <style>
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #f9f5ef;
+        padding: 20px;
+    }
+    header {
+        background-color: #3e2723;
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+    header h1 {
+        font-size: 2.5em;
+        margin: 0;
+    }
+    header p {
+        font-size: 1.1em;
+    }
+    .logo {
+        width: 200px;
+        height: auto;
+        margin-bottom: 10px;
+    }
+    th {
+        background-color: #5d4037;
+        color: white;
+    }
+    td, th {
+        text-align: center;
+        padding: 10px;
+    }
+    .citation-btn {
+        cursor: pointer;
+        color: #007bff;
+    }
+    .modal-body code {
+        white-space: pre-wrap;
+        display: block;
+        background: #f1f1f1;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    a {
+        text-decoration: none;
+    }
+  </style>
 </head>
 <body>
 
-    <h2>CSV Data Table</h2>
+<header>
+  <img src="https://www.vimarshafoundation.org/logo.png" alt="Vimarsha Foundation Logo" class="logo">
+  <h1>The Sarvāmnāya Oral Tradition Archive</h1>
+  <p>A project of <a href="https://www.vimarshafoundation.org/" target="_blank" style="color: #ffcc80;">Vimarsha Foundation</a></p>
+</header>
 
-    <table id="example" class="display">
-        <thead>
-            <tr>
-                <th>id</th>
-                <th>youtube_id</th>
-                <th>zenodo_id</th>
-                <th>title</th>
-                <th>doi</th>
-                <th>zenodo_link</th>
-                <th>youtube_link</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Data will be dynamically filled by JavaScript -->
-        </tbody>
-    </table>
+<div class="container mt-4">
+  <table id="archiveTable" class="display table table-striped">
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>YouTube ID</th>
+        <th>Zenodo ID</th>
+        <th>Title</th>
+        <th>DOI</th>
+        <th>Zenodo</th>
+        <th>YouTube</th>
+        <th>Citation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!--TABLE_ROWS-->
+    </tbody>
+  </table>
+</div>
 
-    <script>
-        // Data from the Python script
-        var tableData = {{ table_data|tojson }};
-        
-        // Initialize DataTables to show all rows without pagination
-        $(document).ready(function() {
-            $('#example').DataTable({
-                "paging": false, // Disable pagination
-                "lengthMenu": [[-1], ["All"]], // Show all rows
-                "data": tableData, // Provide the data dynamically
-                "columns": [
-                    { "data": "id" },
-                    { "data": "youtube_id" },
-                    { "data": "zenodo_id" },
-                    { "data": "title" },
-                    { "data": "doi" },
-                    { "data": "zenodo_link" },
-                    { "data": "youtube_link" }
-                ]
-            });
+<!-- Modal -->
+<div class="modal fade" id="citationModal" tabindex="-1" aria-labelledby="citationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Citation</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <h6>APA:</h6>
+        <code id="apaCitation">Loading...</code>
+        <h6 class="mt-3">BibTeX:</h6>
+        <code id="bibtexCitation">Loading...</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts in correct order -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datatables.net/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#archiveTable').DataTable({
+        paging: false,
+        ordering: true,
+        info: false
+    });
+
+    $('.citation-btn').on('click', function() {
+        var doi = $(this).data('doi');
+        $('#citationModal').modal('show');
+        $('#apaCitation').text("Loading...");
+        $('#bibtexCitation').text("Loading...");
+
+        let recordId = doi.split('.').pop();
+
+        fetch(`https://zenodo.org/api/records/${recordId}`)
+        .then(res => res.json())
+        .then(data => {
+            const apa = data.metadata.citation ? data.metadata.citation.apa : "Not available";
+            fetch(`https://zenodo.org/record/${recordId}/export/hx`)
+              .then(res => res.text())
+              .then(bib => {
+                $('#apaCitation').text(apa);
+                $('#bibtexCitation').text(bib);
+              });
+        }).catch(err => {
+            $('#apaCitation').text("Could not fetch citation.");
+            $('#bibtexCitation').text("Could not fetch citation.");
         });
-    </script>
+    });
+});
+</script>
 
 </body>
 </html>
 """
 
-# Create a Jinja2 template and render with data
-template = Template(html_template)
-html_output = template.render(table_data=data_json)
+# Load CSV
+rows_html = ""
+with open("zenodo_registry.csv", newline='', encoding='utf-8') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        doi = row["doi"]
+        zenodo_link = row["zenodo_link"]
+        youtube_link = row["youtube_link"]
+        youtube_id = row["youtube_id"]
+        zenodo_id = row["zenodo_id"]
+        title = row["title"]
+        id_ = row["id"]
 
-# Write the HTML to a file
-output_file = 'output.html'
-with open(output_file, 'w', encoding='utf-8') as file:
-    file.write(html_output)
+        rows_html += f"""
+        <tr>
+          <td>{id_}</td>
+          <td>{youtube_id}</td>
+          <td>{zenodo_id}</td>
+          <td>{title}</td>
+          <td><a href="https://doi.org/{doi}" target="_blank">{doi}</a></td>
+          <td><a href="{zenodo_link}" target="_blank"><i class="fas fa-cloud-download-alt"></i></a></td>
+          <td><a href="{youtube_link}" target="_blank"><i class="fas fa-play-circle"></i></a></td>
+          <td><i class="fas fa-book citation-btn" data-doi="{doi}"></i></td>
+        </tr>
+        """
 
-print(f"HTML file successfully created: {output_file}")
+# Replace placeholder
+final_html = html_template.replace("<!--TABLE_ROWS-->", rows_html)
+
+# Write output
+with open("zenodo_archive.html", "w", encoding="utf-8") as f:
+    f.write(final_html)
+
+print("✅ HTML generated: zenodo_archive.html")
