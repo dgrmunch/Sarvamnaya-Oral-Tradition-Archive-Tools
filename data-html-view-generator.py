@@ -1,6 +1,7 @@
 import csv
 import requests
 import html
+import time
 
 # File paths
 csv_file_path = "zenodo_registry.csv"  # Path to your CSV file
@@ -138,9 +139,11 @@ with open(csv_file_path, newline='', encoding='utf-8') as csvfile:
         try:
             bibtex_url = f"https://zenodo.org/record/{zenodo_id}/export/bibtex"
             bibtex_citation = requests.get(bibtex_url).text.strip()
+            print (bibtex_citation)
         except Exception as e:
             bibtex_citation = f"Error fetching citation: {e}"
 
+        time.sleep(2)
         row_id = row["id"]
         modal_id = f"citationModal{row_id}"
 
