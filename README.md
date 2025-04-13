@@ -11,21 +11,19 @@
 ### Description:
 ------------
 
-This deposit is part of a larger initiative to preserve and provide open access to the oral teachings, discourses, and interviews conducted by Dr. Staneshwar Timalsina. The source content is originally published on the Vimarsha Foundation YouTube channel. This version has been downloaded, converted to a preservation format, and deposited in Zenodo for long-term archival and scholarly citation.
+This is an initiative to preserve and provide open access to the Sarvāmnāya Oral Tradition as well as related talks and interviews originally published on the Vimarsha Foundation YouTube channel. A variety of video materials have been downloaded, processed, and deposited in Zenodo for long-term archival and scholarly citation.
 
-The content focuses on Tantric traditions, South Asian philosophy, and the metaphysical frameworks of the Sarvāmnāya Śaiva systems.
+* The content focuses on Tantric practices and philosophy within the framework of the Sarvāmnāya Saṃpradāya.
 
-DOI and citation information is provided with each file.
+* DOI and citation information is provided with each file.
 
-If you use this material in academic or creative work, please cite the Zenodo record and acknowledge Dr. Staneshwar Timalsina and the Vimarsha Foundation.
+* If you use this material in academic or creative work, please cite the Zenodo record and acknowledge accordingly Āchāryaji Staneshwar Timalsina and the Vimarsha Foundation.
 
-Here is a complete and precise `README.md` file for the Sarvāmnāya Oral Tradition Archive Tools project, based strictly on the actual contents of the repository:
 
----
 
 # 🕉️ The Sarvāmnāya Oral Tradition Archive: Tools
 
-A reproducible digital pipeline for archiving oral transmissions from the Vimarsha Foundation’s YouTube channel into Zenodo, forming a searchable, citable, and preservation-ready repository for the Sarvāmnāya Tantric tradition.
+This code base includes a reproducible digital pipeline for archiving oral transmissions from the Vimarsha Foundation’s YouTube channel into Zenodo, forming a searchable, citable, and preservation-ready repository for the Sarvāmnāya Tantric tradition.
 
 ---
 
