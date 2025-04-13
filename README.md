@@ -1,12 +1,12 @@
 # The Sarvāmnāya Oral Tradition Archive
-## A Research Repository of Guru-Paramparā Transmissions
+## A Research Repository of the Sarvāmnāya Saṃpradāya
 
 *Source: Vimarsha Foundation Media* 
 *License: Creative Commons Attribution 4.0 International (CC BY 4.0)*  
 *Archive Collection: Sarvāmnāya Oral Tradition Archive*  
 *Zenodo Community: sarvamnaya-oral-tradition-archive*
 
-* **SEE THE ARCHIVE HERE:** https://dgrmunch.github.io/Sarvamnaya-Oral-Tradition-Archive-Tools/zenodo_archive.html
+* **THE ARCHIVE IS LIVE HERE:** https://dgrmunch.github.io/Sarvamnaya-Oral-Tradition-Archive-Tools/zenodo_archive.html
 
 ### Description:
 ------------
