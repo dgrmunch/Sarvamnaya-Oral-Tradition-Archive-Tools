@@ -150,9 +150,8 @@ export ZENODO_TOKEN='your_access_token_here'
 ## 🌐 Outputs
 
 - 🎞️ Zenodo records with DOIs and rich metadata
-- 🔊 Audio-only versions for low-bandwidth access
 - 📚 HTML and BibTeX citation-ready archive
-- 🧾 CSV registry for reproducibility
+- 🧾 CSV registry 
 
 ---
 
