@@ -1,5 +1,5 @@
 # The Sarvāmnāya Oral Tradition Archive
-## A Research Repository of the Sarvāmnāya Saṃpradāya
+## Media Repository on the Sarvāmnāya Saṃpradāya for Scholarly Research
 
 *Source: Vimarsha Foundation Media* 
 *License: Creative Commons Attribution 4.0 International (CC BY 4.0)*  
